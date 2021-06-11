@@ -1,6 +1,6 @@
 Package: rsetse
 Title: Strain Elevation Tension Spring Embedding
-Version: 0.4.0
+Version: 0.5.0
 Authors@R: 
     c(person(given = "Jonathan",
            family = "Bourne",
@@ -26,16 +26,16 @@ Depends: R (>= 3.4.0)
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-Imports: dplyr, Matrix, rlang, igraph, purrr, tibble, minpack.lm,
-        magrittr, methods, stats
+Imports: dplyr, Matrix, rlang (>= 0.1.2), igraph, purrr, tibble,
+        minpack.lm, magrittr, methods, stats
 RoxygenNote: 7.1.1
-Suggests: knitr, rmarkdown, tidyr, ggplot2, ggraph
+Suggests: knitr, rmarkdown, tidyr, ggplot2, ggraph, roxygen2
 VignetteBuilder: knitr
 URL: https://github.com/JonnoB/rSETSe
 BugReports: https://github.com/JonnoB/rSETSe/issues
 NeedsCompilation: no
-Packaged: 2020-11-07 11:50:04 UTC; jonno
+Packaged: 2021-06-11 09:42:10 UTC; jonno
 Author: Jonathan Bourne [aut, cre] (<https://orcid.org/0000-0003-2616-3716>)
 Maintainer: Jonathan Bourne <jonathan.s.bourne@gmail.com>
 Repository: CRAN
-Date/Publication: 2020-11-12 09:30:02 UTC
+Date/Publication: 2021-06-11 10:00:02 UTC

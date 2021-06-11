@@ -1,6 +1,6 @@
-#'Preapre data for the `SETSe_core` function
+#'Preapre data for the `setse_core` function
 #'
-#'This is a helper function that makes the `SETSe` function code easier to read. Seldom used otherwise
+#'This is a helper function that makes the `setse` function code easier to read. Seldom used otherwise
 #'
 #'The file outputs a named list containing 
 #'
@@ -14,18 +14,20 @@
 #' 
 #' @details The output of the function is different depending on the number of nodes in the network. This optimises the
 #' operations performed so that networks that will be solved using the two node solution only have data for the two node solution
-#' whilst networks that will be solved using the SETSe algorithm do not have data required for the two node solution.
+#' whilst networks that will be solved using the setse algorithm do not have data required for the two node solution.
 #' This minimises time and memory, which is useful when large numbers of data preparations need to be performed, for example
 #' when running setse_bicomp() on a large network.
 #'
-#' @return Returns a list that contains all the parts needed to allow the SETSe family of functions and the two_node_solution
+#' @return Returns a list that contains all the parts needed to allow the setse family of functions and the two_node_solution
 #' function to produce embeddings.
 #' 
 #' @noRd
 
-SETSe_data_prep  <-function(g, force, distance, mass, edge_name = edge_name, k = "k", sparse = FALSE){
+setse_data_prep  <-function(g, force, distance, mass, edge_name = edge_name, k = "k", sparse = FALSE){
   #this is a helper function that goes inside the the find network balance function to help make the code easier to read
-  
+  if(sum(igraph::get.edge.attribute(g, name = k)<0)>0){message("At least one edge has negative spring stiffness (k). This is likely to be a mistake. 
+Process will continue but failure to converge is likely. 
+If this was an error check spring stiffnesses values.")}
   #just calls distance 'distance' for simplicities sake
   g <- igraph::set.edge.attribute(g, "distance", value = igraph::get.edge.attribute(g, distance))
   

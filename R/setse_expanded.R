@@ -1,7 +1,7 @@
 #' SETSe embedding showing full convergence history
 #' 
-#' This is a special case function which keeps the history of the network dynamics. It is useful for demonstrations. 
-#' or parametrising difficult networks
+#' This is a special case function of SETSe which keeps the history of all node movements during convergence0. It is useful for demonstrations,
+#' or parametrising difficult networks.
 #' 
 #' @param g An igraph object. The network
 #' @param force A character string
@@ -18,30 +18,35 @@
 #' @param verbose Logical value. Whether the function should output messages or run quietly.
 #' @param two_node_solution Logical. The Newton-Raphson algo is used to find the correct angle
 #' 
-#' @return A list of four elements. A dat frame with the height embedding of the network, a data frame of the edge embeddings, 
-#' the convergence dynamics dataframe for the network as well as the search history for convergence criteria of the network
+#' @return 
+#' A dataframe equivalent to the node_embeddings dataframe for the other SETSe methods. However, the dataframe includes a 
+#' row for each node in each iteration of the simulation, as well as an additional column identifying the iteration number. 
+#' This dataframe can be very large as it contains nxm rows where n is the number of nodes and m is the number of iterations in the simulation.
 #' 
+#' @family setse
+# @seealso \code{\link{setse_auto}} \code{\link{setse}}
 #' @examples
 #' 
-#' g_prep <- biconnected_network %>%
-#'  prepare_SETSe_continuous(., node_names = "name", force_var = "force", k = NULL)
+#' g_prep <- biconnected_network%>%
+#' prepare_edges(.) %>%
+#' prepare_continuous_force(., node_names = "name", force_var = "force", k = NULL) 
 #'
 #' #the base configuration does not work
-#' divergent_result <- SETSe_expanded(g_prep, k = "weight", tstep = 0.1)
+#' divergent_result <- setse_expanded(g_prep, k = "weight", tstep = 0.1)
 #' 
 #' #with a smaller timestep the algorithm converges
-#' convergent_result <- SETSe_expanded(g_prep, k = "weight", tstep = 0.01)
+#' convergent_result <- setse_expanded(g_prep, k = "weight", tstep = 0.01)
 #' 
 #' \dontrun{
 #' library(ggplot2)
 #' #plot the results for a given node
 #' convergent_result %>%
 #'  ggplot(aes(x = t, y = net_force, colour = node)) + geom_line()
-#' #replot with divergent_result to see what it looks like
+#' #re-plot with divergent_result to see what it looks like
 #' }
 #' @export
 
-SETSe_expanded <- function(g, 
+setse_expanded <- function(g, 
                            force ="force", 
                            distance = "distance", 
                            edge_name = "edge_name",
@@ -70,7 +75,7 @@ SETSe_expanded <- function(g,
   
   
   #helper function that prepares the data
-  Prep <- SETSe_data_prep(g = g, 
+  Prep <- setse_data_prep(g = g, 
                           force = force, 
                           distance = distance, 
                           mass = mass, 
@@ -115,7 +120,7 @@ SETSe_expanded <- function(g,
     
   } else{
     #Solves using the iterative method.   
-    Out <- SETSe_core_expanded(
+    Out <- setse_core_expanded(
       node_embeddings = Prep$node_embeddings, 
       ten_mat = Prep$ten_mat, 
       non_empty_matrix = Prep$non_empty_matrix, 

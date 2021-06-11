@@ -1,4 +1,4 @@
-#' Create dataframe of node and aggregated edge embeddings
+#' Create dataframe of node and aggregated edge embeddings for high dimensional feature networks
 #'
 #' Aggregates edge strain and tension to node level
 #' 
@@ -16,17 +16,23 @@
 #' 
 #' @examples
 #' 
-#' embeddings_data <- biconnected_network %>%
+#' g <- biconnected_network %>%
 #'  prepare_edges(.) %>%
+#'  #prepare the continuous features as normal
 #'  prepare_continuous_force(., node_names = "name", force_var = "force") %>%
-#'  setse_auto(., k = "weight")
+#'  #prepare the categorical features as normal
+#'  prepare_categorical_force(., node_names = "name", force_var = "group")
+#'   
+#'  #embed them using the high dimensional function
+#'  two_dimensional_embeddings <- setse_auto_hd(g, force = c("group_A", "force"), k = "weight")
 #'
-#'out <- create_node_edge_df(embeddings_data, function_names = c("mean", "mode", "sum"))
+#'  out <- create_node_edge_df_hd(two_dimensional_embeddings , 
+#'   function_names = c("mean", "mode", "sum"))
 #' 
 #' @export
 
 
-create_node_edge_df <- function(embeddings_data, function_names = c("mean", "median")){
+create_node_edge_df_hd <- function(embeddings_data, function_names = c("mean", "median")){
   #create a named function list of the aggregation function
   function_list <- lapply(function_names, get)
   names(function_list) <- function_names
@@ -41,7 +47,7 @@ create_node_edge_df <- function(embeddings_data, function_names = c("mean", "med
     dplyr::summarise(dplyr::across(.cols = c(tension, strain), 
                                    .fns = function_list  )) %>% 
     dplyr::left_join(embeddings_data$node_embeddings %>% 
-                       dplyr::select(node, elevation, force) %>% 
+                       dplyr::select(node, dplyr::starts_with("elevation_"), dplyr::starts_with("force_")) %>% 
                        tibble::tibble(), 
                      by = "node")
   

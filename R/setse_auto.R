@@ -1,6 +1,6 @@
 #' SETSe embedding with automatic drag and timestep selection
 #'
-#' Uses a grid search and a binary search to find appropriate convergence conditions.
+#' Embeds/smooths a feature network using the SETSe algorithm automatically finding convergence parameters using a grid search.
 #' 
 #' @param g An igraph object
 #' @param force A character string. This is the node attribute that contains the force the nodes exert on the network.
@@ -36,28 +36,32 @@
 #' greatly speeds up the search for good parameter values. It increases the chance of successful convergence. 
 #' More detail on auto-SETSe can be found in the paper "The spring bounces back" (Bourne 2020).
 #' 
-#' @return A list of four elements. A data frame with the height embeddings of the network, a data frame of the edge embeddings, 
-#' the convergence dynamics dataframe for the network as well as the search history for convergence criteria of the network
+#' @return A list containing 5 dataframes.
+#' \enumerate{
+#'   \item The network dynamics describing several key figures of the network during the convergence process, this includes the static_force
+#'   \item The node embeddings. Includes all data on the nodes the forces exerted on them position and dynamics at simulation termination
+#'   \item time taken. the amount of time taken per component, includes the edge and nodes of each component
+#'   \item The edge embeddings. Includes all data on the edges as well as the strain and tension values.
+#'   \item memory_df A dataframe recording the iteration history of the convergence of each component.
+#' }
 #' 
-#' @seealso \code{\link{SETSe}} \code{\link{SETSe_bicomp}}
+#' @family setse
+# @seealso \code{\link{setse_auto}} \code{\link{setse}}
 #' @examples
 #' 
 #' set.seed(234) #set the random see for generating the network
-#' 
 #' g <- generate_peels_network(type = "E")
-#' 
-#' g_prep <- g %>%
+#' embeddings <- g %>%
+#' prepare_edges(k = 500, distance = 1) %>%
 #' #prepare the network for a binary embedding
-#' prepare_SETSe_binary(., node_names = "name", k = 1000, 
-#'                      force_var = "class", 
-#'                      positive_value = "A")
-#'                      
-#' #embed the network using auto SETSe with default settings
-#' embeddings <- SETSe_auto(g_prep)
+#' prepare_categorical_force(., node_names = "name",
+#'                      force_var = "class") %>%
+#' #embed the network using auto_setse
+#'   setse_auto(., force = "class_A")
 #' 
 #' @export
 
-SETSe_auto <- function(g, 
+setse_auto <- function(g, 
                        force ="force", 
                        distance = "distance", 
                        edge_name = "edge_name",
@@ -85,7 +89,7 @@ SETSe_auto <- function(g,
   
   if(verbose){print("prepping dataset")}
   #Prep the data before going into the converger
-  Prep <- SETSe_data_prep(g = g, 
+  Prep <- setse_data_prep(g = g, 
                           force = force, 
                           distance = distance, 
                           mass = mass, 
@@ -197,7 +201,7 @@ SETSe_auto <- function(g,
     } 
     
     # print( memory_df$common_drag_iter[drag_iter])
-    embeddings_data <- SETSe_core(
+    embeddings_data <- setse_core(
       node_embeddings = Prep$node_embeddings, 
       ten_mat = Prep$ten_mat, 
       non_empty_matrix = Prep$non_empty_matrix, 
@@ -218,7 +222,7 @@ SETSe_auto <- function(g,
     memory_df$tstep[drag_iter] <- tstep_adapt
     
     memory_df$res_stat[drag_iter] <- sum(abs(node_embeds$static_force))
-    #In certain circumstances SETSe core terminates straight away producing NA values.
+    #In certain circumstances setse core terminates straight away producing NA values.
     #The below line prevents NA values causing issues by ensureing that the params only produces a max res_stat
     memory_df$res_stat[drag_iter] <- ifelse(is.na(memory_df$res_stat[drag_iter]), res_stat_limit, memory_df$res_stat[drag_iter])
     
@@ -393,8 +397,8 @@ SETSe_auto <- function(g,
     }
     
     
-    print(paste0("Minimum tolerance not exceeded, running SETSe on best parameters, drag value ", signif(drag_val, 3)))
-    embeddings_data <- SETSe_core_time_shift(
+    print(paste0("Minimum tolerance not exceeded, running setse on best parameters, drag value ", signif(drag_val, 3)))
+    embeddings_data <- setse_core_time_shift(
       node_embeddings = Prep$node_embeddings, 
       ten_mat = Prep$ten_mat, 
       non_empty_matrix = Prep$non_empty_matrix, 

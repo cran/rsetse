@@ -1,6 +1,6 @@
-#' SETSe Core
+#' setse Core
 #' 
-#' This is the SETse core algorithm. It runs the SETSe model to find the equilibrium position of the network
+#' This is the SETse core algorithm. It runs the setse model to find the equilibrium position of the network
 #' 
 #' @param node_embeddings A data frame The current dynamics and forces experienced by the node a data frame.
 #' @param ten_mat A data frame The current dynamics and forces experienced by the node a data frame.
@@ -10,7 +10,7 @@
 #' @param mass A numeric. This is the mass constant of the nodes in normalised networks this is set to 1.
 #' @param tstep A numeric value. The time step, measured in seconds, that will be used to calculate the new dynamic state
 #' @param max_iter An integer. The maximum number of iterations before stopping. Larger networks usually need more iterations.
-#' @param coef_drag A numeric value. Used to set a multiplier on the friction value. This is usualy determined by SETSe_auto
+#' @param coef_drag A numeric value. Used to set a multiplier on the friction value. This is usualy determined by setse_auto
 #' @param tol A numeric. The tolerance factor for early stopping.
 #' @param sparse Logical. Whether or not the function should be run using sparse matrices. must match the actual matrix, this could prob be automated
 #' @param sample Integer. The dynamics will be stored only if the iteration number is a multiple of the sample. 
@@ -21,7 +21,7 @@
 #' @param noisy_termination Stop the process if the static force does not monotonically decrease.
 #' 
 #' @details 
-#' This function is usally run inside a more easy to use function such as The SETSe function, SETse_bicomp or SETSe_auto. These
+#' This function is usally run inside a more easy to use function such as The setse function, SETse_bicomp or setse_auto. These
 #' wrapper functions make the application of the SETse algorithm more straight foreword. However, this function is included
 #' for completeness and to allow ground up experiments
 #' 
@@ -35,13 +35,13 @@
 #'   \item The node embeddings. Includes all data on the nodes the forces exerted on them position and dynamics at simulation termination
 #'   \item A data frame giving the time taken for the simulation as well as the number of nodes and edges. Node and edge data is given
 #'   as this may differ from the total number of nodes and edges in the network depending on the method used for convergnence.
-#'   For example if SETSe_bicomp is used then some simulations may contain as little as two nodes and 1 edge
+#'   For example if setse_bicomp is used then some simulations may contain as little as two nodes and 1 edge
 #' }
 #' 
 #' @noRd
 # Strips out all pre processing to make it as efficient and simple as possible
 
-SETSe_core <- function(node_embeddings, 
+setse_core <- function(node_embeddings, 
                        ten_mat, 
                        non_empty_matrix, 
                        kvect, 

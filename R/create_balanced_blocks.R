@@ -2,7 +2,7 @@
 #' 
 #' Separates the network into a series of bi-connected components that can be solved separately. 
 #' Solving smaller subgraphs using the bi-connected component method reduces the risk of network divergence.
-#' This function is seldom called independently of SETSe_bicomp
+#' This function is seldom called independently of setse_bicomp
 #' 
 #' @details When networks are separated into the bi-connected subgraphs or blocks. The overall network balance needs to be maintained. 
 #' \code{create_balanced_blocks} maintains the balance by summing the net force across the all the nodes that are being removed from

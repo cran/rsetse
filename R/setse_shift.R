@@ -1,6 +1,7 @@
-#' SETSe algorithm
-#'  
-#' The basic SETSe function.
+#' setse algorithm with automatic timestep adjustment
+#' 
+#' The basic setse function with added timestep adjustment. 
+#' The time shift functionality automatically adjusts the timestep if the convergence process is noisy
 #'  
 #' @param g An igraph object
 #' @param force A character string. This is the node attribute that contains the force the nodes exert on the network.
@@ -19,30 +20,28 @@
 #' @param static_limit Numeric. The maximum value the static force can reach before the algorithm terminates early. This
 #' prevents calculation in a diverging system. The value should be set to some multiple greater than one of the force in the system.
 #' If left blank the static limit is twice the system absolute mean force.
-#' @param noisy_termination Stop the process if the static force does not monotonically decrease.
+#' @param tstep_change a numeric scaler. A value between 0 and one, the fraction the new timestep will be relative to the previous one
+#' this can stop the momentum of the nodes forcing a divergence, but also can slow down the process. default is TRUE.
 #' 
 #' @details This is the basic SETS embeddings algorithm, it outputs all elements of the embeddings as well as convergence dynamics. It is a
 #' wrapper around the core SETS algorithm which requires data preparation and only produces node embeddings and network dynamics. 
-#' There is little reason to use this function as \code{\link{SETSe_auto}} and \code{\link{SETSe_bicomp}} 
+#' There is little reason to use this function as \code{\link{setse_auto}} and \code{\link{setse_bicomp}} 
 #' are faster and easier to use.
 #' 
 #' @return A list of three elements. A data frame with the height embeddings of the network, a data frame of the edge embeddings
 #' as well as the convergence dynamics dataframe for the network.
 #' 
 #' @examples
-#' set.seed(234) #set the random see for generating the network
-#' g <- generate_peels_network(type = "E")
-#' embeddings <- g %>%
-#' #prepare the network for a binary embedding
-#' prepare_SETSe_binary(., node_names = "name", k = 1000, 
-#'                      force_var = "class", 
-#'                      positive_value = "A") %>%
-#' #embed the network using SETSe
-#'   SETSe()
-#' @seealso \code{\link{SETSe_auto}} \code{\link{SETSe_bicomp}}
+#' \dontrun{
+#' biconnected_network %>%
+#' prepare_continuous_force(., node_names = "name", force_var = "force") %>%
+#' #embed the network using setse
+#' setse_shift(., k = "weight", tstep = 0.000029)
+#' }
+#' @seealso \code{\link{setse_auto}} \code{\link{setse_bicomp}}
 #' @export
 
-SETSe <- function(g, 
+setse_shift <- function(g, 
                   force ="force", 
                   distance = "distance", 
                   edge_name = "edge_name",
@@ -56,10 +55,10 @@ SETSe <- function(g,
                   two_node_solution = TRUE,
                   sample = 1,
                   static_limit = NULL,
-                  noisy_termination = TRUE){
+                  tstep_change = 0.5){
   
   #helper function that prepares the data
-  Prep <- SETSe_data_prep(g = g, 
+  Prep <- setse_data_prep(g = g, 
                           force = force, 
                           distance = distance, 
                           mass = mass, 
@@ -69,14 +68,14 @@ SETSe <- function(g,
   
   #do special case solution 
   if(igraph::ecount(g)==1 & two_node_solution){
-  
+    
     Out <- two_node_solution(g, Prep = Prep, auto_setse_mode = FALSE)
     
     #Solves using the iterative method.
   } else{
     
     #The core algorithm
-    Out <- SETSe_core(
+    Out <- setse_core_time_shift(
       node_embeddings = Prep$node_embeddings, 
       ten_mat = Prep$ten_mat, 
       non_empty_matrix = Prep$non_empty_matrix, 
@@ -90,17 +89,17 @@ SETSe <- function(g,
       sparse = sparse,
       sample = sample,
       static_limit = static_limit,
-      noisy_termination = noisy_termination) 
+      tstep_change = tstep_change) 
     
   }
   
   
   #Extract edge tension and strain from the network
   Out$edge_embeddings <- calc_tension_strain(g = g,
-                                              Out$node_embeddings,
-                                              distance = distance, 
-                                              edge_name = edge_name, 
-                                              k = k)
+                                             Out$node_embeddings,
+                                             distance = distance, 
+                                             edge_name = edge_name, 
+                                             k = k)
   
   
   return(Out)

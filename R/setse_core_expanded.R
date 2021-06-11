@@ -1,4 +1,4 @@
-#' SETSe core expanded
+#' setse core expanded
 #' 
 #' This function uses the SETS embedding to find the equilibrium position of a network or a bi-connected component.
 #' It produces the node embeddings for every iteration of the process. useful for analysis and finding good starting parameters
@@ -23,7 +23,7 @@
 #' @noRd
 # Strips out all pre processing to make it as efficient and simple as possible
 
-SETSe_core_expanded <- function(node_embeddings, 
+setse_core_expanded <- function(node_embeddings, 
                                 ten_mat, 
                                 non_empty_matrix, 
                                 kvect, 

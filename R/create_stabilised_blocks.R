@@ -1,6 +1,6 @@
 #' Create stabilised blocks
 #' 
-#' An internal function. This function is called by SETSe_bicomp and performs SETSe_auto on all the bi-connected components
+#' An internal function. This function is called by setse_bicomp and performs setse_auto on all the bi-connected components
 #' of the network. This function is rarely called directly.
 #' 
 #' @param g An igraph object
@@ -33,9 +33,9 @@
 #' @param balanced_blocks A list 
 #' @param noisy_termination Stop the process if the static force does not monotonically decrease.
 #' 
-#' @details This function isn't really supposed to be used apart from as a sub-routine of the SETSe biconnected component method.
+#' @details This function isn't really supposed to be used apart from as a sub-routine of the setse biconnected component method.
 #' 
-#' @seealso \code{\link{SETSe_bicomp}} \code{\link{SETSe}}
+#' @seealso \code{\link{setse_bicomp}} \code{\link{setse}}
 #' @return A dataframe with the height embeddings of the network
 #' 
 #' 
@@ -79,8 +79,11 @@ Create_stabilised_blocks <- function(g,
 
       #sub tol can be extremely small. if it is then I say that it is zero and effectively the nodes are left unconverged
       #again, it is worth considering the magnitude of force in the network
+      #previously .Machine$double.eps^0.5 was used, but as the sum of static_force is positive
+      #I am changing the value to .Machine$double.eps.
+      #I think the worst case is that the static limiti sums to 0. But in this case the values are so small it doesn't matter anyway
       sub_tol <- tol*sum(abs(igraph::get.vertex.attribute(balanced_blocks[[.x]], force)))/total_force
-      sub_tol_larger_than_limit <- sub_tol> .Machine$double.eps^0.5
+      sub_tol_larger_than_limit <- sub_tol> .Machine$double.eps
       sub_tol <- ifelse(sub_tol_larger_than_limit, sub_tol, tol)
       
       if(!is.null(static_limit)){
@@ -100,11 +103,11 @@ Create_stabilised_blocks <- function(g,
       #do special case solution for two nodes only
       if(igraph::ecount(balanced_blocks[[.x]])==1){
         
-        Prep <- SETSe_data_prep(g = balanced_blocks[[.x]], 
+        Prep <- setse_data_prep(g = balanced_blocks[[.x]], 
                                 force = force, 
                                 distance = distance, 
                                 mass = ifelse(is.null(mass), mass_adjuster(balanced_blocks[[.x]], 
-                                                                           force = "force", resolution_limit = TRUE), mass), 
+                                                                           force = force, resolution_limit = TRUE), mass), 
                                 k = k,
                                 edge_name = edge_name,
                                 sparse = sparse)
@@ -112,14 +115,14 @@ Create_stabilised_blocks <- function(g,
         Out <- two_node_solution(g, Prep = Prep, auto_setse_mode = TRUE)
         
         #S if the subtolerance and the sub static values are larger than the sqrt of the machine eps
-        #Then solve using the auto-SETSe method.
+        #Then solve using the auto-setse method.
       }  else if(sub_tol_larger_than_limit  & sub_tol_larger_than_limit){
         
         print(paste("Block", .x, "of", max(BlockNumbers),  "has more than two nodes. Running auto-setse"))
         
         start_time_block <- Sys.time()
         
-        Out <- SETSe_auto(balanced_blocks[[.x]],
+        Out <- setse_auto(balanced_blocks[[.x]],
                           force = force,
                           distance = distance, 
                           edge_name = edge_name,
@@ -128,7 +131,7 @@ Create_stabilised_blocks <- function(g,
                           tol = sub_tol, #the force has to be scaled to the component                           
                           max_iter =  max_iter, 
                           mass =  ifelse(is.null(mass), mass_adjuster(balanced_blocks[[.x]], 
-                                                                      force = "force", resolution_limit = TRUE), mass), 
+                                                                      force = force, resolution_limit = TRUE), mass), 
                           sparse = sparse,
                           sample = sample,
                           static_limit = sub_static_limit,
@@ -157,11 +160,11 @@ Create_stabilised_blocks <- function(g,
         print(paste("Block", .x, "of", max(BlockNumbers),  
                     "has more than two nodes but approximately 0 force, no convergence necessary, continuing to next block"))
         
-        Prep <- SETSe_data_prep(g = balanced_blocks[[.x]], 
+        Prep <- setse_data_prep(g = balanced_blocks[[.x]], 
                                 force = force, 
                                 distance = distance, 
                                 mass = ifelse(is.null(mass), mass_adjuster(balanced_blocks[[.x]], 
-                                                                           force = "force", resolution_limit = TRUE), mass), 
+                                                                           force = force, resolution_limit = TRUE), mass), 
                                 k = k,
                                 edge_name = edge_name,
                                 sparse = sparse)
@@ -208,10 +211,10 @@ Create_stabilised_blocks <- function(g,
   #extract the articulation nodes
   ArticulationVect <- igraph::get.vertex.attribute(g, "name", bigraph$articulation_points)
   
-  #place all nodes relative to the origin
+  #extracts the node embedding data by block and numbers all blocks in the order they were created by biconnected_components, but with the originblock as block=0
+  #Also tags articulation nodes
   relative_blocks <- 1:length(StabilModels) %>% 
     purrr::map_df(~{
-      #print(.x) #It is a bit annoying and pointless now
       temp <- StabilModels[[.x]]$node_embeddings
       temp$Reference_ID <- .x
       
@@ -261,21 +264,25 @@ Create_stabilised_blocks <- function(g,
   
   #The biconnected components are converted to absolute values from relative ones
   node_embeddings <- fix_elevation_to_origin(relative_blocks, ArticulationVect) 
-  
+
+  mass_value_temp <-ifelse(is.null(mass),
+               mass_adjuster(g,
+                             force = force,
+                             resolution_limit = TRUE),
+               mass)
   print("Removing multiple articulation nodes")
   #this bind rows takes place as, there are vastly more non-articulation nodes than 
   #articulation nodes, this can mean and absolutely massive number of groups which is very slow to summarise
   #by aggregating only the necessary nodes it will be much faster
   node_embeddings <- dplyr::bind_rows(node_embeddings[!(node_embeddings$node %in% ArticulationVect),],
                                remove_articulation_duplicates(node_embeddings, ArticulationVect))  %>%
-    #friction is different depending on the biconnected component so is meaningless in the overall analysis
-    #Poissibly could use the drag for the major biconn
+    #friction is different depending on the bi-connected component so is meaningless in the overall analysis
+    #Possibly could use the drag for the major bi-connected component?
     dplyr::mutate(
       friction = NA,#coef_drag * velocity,
       static_force = force + net_tension,
-      net_force = NA,#static_force - friction,
-      acceleration = net_force/ifelse(is.null(mass), mass_adjuster(balanced_blocks[[OriginBlock_number]], 
-                                                                   force = "force", resolution_limit = TRUE), mass),
+      net_force = static_force,#static_force - friction,
+      acceleration = net_force/mass_value_temp,
       t = 1,
       t = tstep * Iter) %>%
     dplyr::arrange(node)

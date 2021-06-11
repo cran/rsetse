@@ -1,12 +1,12 @@
 #' two node solution
 #' 
-#' Uses a newton-Raphson to solve the two node solution. Seldom used outside of a 'SETSe' function
+#' Uses a newton-Raphson to solve the two node solution. Seldom used outside of a 'setse' function
 #' 
-#' @details a helper function inside the main SETSe suite of functions. However it can be used to solve two node graphs
+#' @details a helper function inside the main setse suite of functions. However it can be used to solve two node graphs
 #' 
 #' @param g the graph must be two nodes connected by a single edge
-#' @param Prep The output of SETSe_data_prep. provides the inputs needed to do the two node solution
-#' @param auto_setse_mode outputs an additional list element "memory_df" to make it compatible with the SETSe_auto function
+#' @param Prep The output of setse_data_prep. provides the inputs needed to do the two node solution
+#' @param auto_setse_mode outputs an additional list element "memory_df" to make it compatible with the setse_auto function
 #' 
 #' @return 
 #' A list of two elements node_embeddings and network_dynamics. if `auto_setse_mode==TRUE` 
@@ -60,6 +60,8 @@ two_node_solution <- function(g, Prep = Prep, auto_setse_mode = FALSE){
                              -abs(Prep$node_embeddings$force[1]), 
                              abs(Prep$node_embeddings$force[1])
   )
+  #The static force needs to be set to 0 otherwise it can appear as if the network has not converged
+  temp$static_force <-0
 
   
   Out <- list(network_dynamics = tibble::tibble(t = 0, 
